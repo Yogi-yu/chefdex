@@ -1,0 +1,44 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>ChefDex</title>
+  <!--
+    ChefDex brand mark — center arch + two C-hooks, stroke icon.
+    Dark mode adaptive via CSS media query (white on dark browser chrome).
+  -->
+  <style>
+    .mark { stroke: #111111; }
+    @media (prefers-color-scheme: dark) {
+      .mark { stroke: #ffffff; }
+    }
+  </style>
+  <!-- Left C-hook -->
+  <path
+    class="mark"
+    d="M17,18 C5,16 5,40 17,42"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Right C-hook -->
+  <path
+    class="mark"
+    d="M31,18 C43,16 43,40 31,42"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Center arch -->
+  <path
+    class="mark"
+    d="M16,42 C16,4 32,4 32,42"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Brim -->
+  <path
+    class="mark"
+    d="M12,46 L36,46"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+</svg>
