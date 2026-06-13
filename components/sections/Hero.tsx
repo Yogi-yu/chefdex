@@ -71,7 +71,7 @@ export default function Hero() {
               animate="animate"
               transition={{ duration: 0.55, delay: 0.07 }}
             >
-              On-chain Michelin{' '}
+              On-chain Global{' '}
               <span className="text-gradient-gold">Ranking System</span>{' '}
               for Chefs
             </motion.h1>

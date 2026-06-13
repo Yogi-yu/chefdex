@@ -34,7 +34,7 @@ const FEATURES = [
   },
   {
     icon: Award,
-    title: 'On-Chain Michelin Layer',
+    title: 'On-Chain Global Ranking Layer',
     description:
       'ChefDex is the on-chain equivalent of a culinary ranking authority — a transparent benchmark built on verifiable market signals, not editorial committees.',
   },
@@ -73,7 +73,7 @@ export default function ChefCoin() {
             className="mt-5 text-lg text-charcoal-500 leading-relaxed"
             {...fadeUp(0.14)}
           >
-            ChefDex is the on-chain Michelin ranking layer for professional chefs. Each chef
+            ChefDex is the on-chain global ranking layer for professional chefs. Each chef
             issues a named coin — a liquid, market-priced representation of their culinary
             standing that updates in real time.
           </motion.p>

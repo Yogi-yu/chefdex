@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ChefDex — On-chain Michelin Ranking System for Chefs',
+  title: 'ChefDex — On-chain Global Ranking System for Chefs',
   description:
-    'ChefDex is the on-chain Michelin ranking system for professional chefs. Chefs issue ChefCoins, build market-driven reputation, and power crypto payments across fine dining.',
+    'ChefDex is the on-chain global ranking system for professional chefs. Chefs issue ChefCoins, build market-driven reputation, and power crypto payments across fine dining.',
   keywords: [
     'ChefDex',
     'ChefCoin',
@@ -33,24 +33,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://chefdex.io',
-    title: 'ChefDex — On-chain Michelin Ranking System for Chefs',
+    title: 'ChefDex — On-chain Global Ranking System for Chefs',
     description:
-      'The on-chain Michelin ranking system for chefs. Market-driven reputation, ChefCoin issuance, and crypto payments for fine dining.',
+      'The on-chain global ranking system for chefs. Market-driven reputation, ChefCoin issuance, and crypto payments for fine dining.',
     siteName: 'ChefDex',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'ChefDex — On-chain Michelin Ranking System for Chefs',
+        alt: 'ChefDex — On-chain Global Ranking System for Chefs',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ChefDex — On-chain Michelin Ranking System for Chefs',
+    title: 'ChefDex — On-chain Global Ranking System for Chefs',
     description:
-      'The on-chain Michelin ranking system for chefs. Market-driven reputation, ChefCoin issuance, and crypto payments for fine dining.',
+      'The on-chain global ranking system for chefs. Market-driven reputation, ChefCoin issuance, and crypto payments for fine dining.',
     images: ['/og-image.png'],
     creator: '@chefdex',
   },

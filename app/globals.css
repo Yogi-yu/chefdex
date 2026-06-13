@@ -67,6 +67,119 @@ body {
   background-clip: text;
 }
 
+/* ── PDF Safe Mode ─────────────────────────────────────────────────────────
+   Applied to <body> via document.body.classList.add("pdf-mode") immediately
+   before html2canvas capture. Removed again in the finally block.
+
+   Goals:
+     1. Kill every animation / transition so the DOM is fully settled.
+     2. Force all Framer Motion elements (opacity:0 / translateY) to their
+        final visible state — without scrolling through the page.
+     3. Eliminate every absolute-positioned decorative overlay that creates
+        stacking-context collisions (hero glow, card hover gradients, etc.).
+     4. Collapse the full-viewport hero to a reasonable height.
+     5. Hide the floating export button and any other UI chrome.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* 1. Freeze all motion */
+body.pdf-mode *,
+body.pdf-mode *::before,
+body.pdf-mode *::after {
+  animation: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition: none !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* 2. Force every Framer Motion element fully visible.
+   Framer sets inline style="opacity:0;transform:translateY(32px)" on
+   elements that haven't entered the viewport. Blanket override is safe
+   here because opacity:1 is the normal default and decorative overlays
+   (which use opacity intentionally) are hidden in rule 4 below. */
+body.pdf-mode * {
+  opacity: 1 !important;
+}
+
+/* 3. Remove all inline transforms (Framer translateY, Tailwind translate-*).
+   Only targets elements that actually have a style="…transform…" attribute
+   so non-transformed layout is untouched. */
+body.pdf-mode [style*="transform"] {
+  transform: none !important;
+}
+
+/* 4. Hide ALL decorative pointer-events-none overlays.
+   Every absolute-positioned hover gradient in the deck page carries
+   pointer-events-none (hero glow wrapper, card hover fills, etc.).
+   Hiding them eliminates the primary source of stacking collisions. */
+body.pdf-mode .pointer-events-none {
+  display: none !important;
+}
+
+/* 5. Hide elements explicitly marked as print-unsafe or UI chrome */
+body.pdf-mode [data-pdf-hide],
+body.pdf-mode [data-pdf-exclude] {
+  display: none !important;
+}
+
+/* 6. Hero: collapse full-viewport height to a compact block so the
+   section doesn't leave a giant blank space in the PDF. */
+body.pdf-mode .min-h-screen {
+  min-height: 640px !important;
+}
+
+/* 7. Hero h1: restore natural spacing that transforms may have skewed */
+body.pdf-mode h1 {
+  margin-top: 40px !important;
+  margin-bottom: 20px !important;
+  line-height: 1.2 !important;
+}
+
+/* 8. Sections: allow overflow so content never gets clipped mid-capture */
+body.pdf-mode section {
+  overflow: visible !important;
+}
+
+/* ── Design System ──────────────────────────────────────────────────────
+   Canonical typographic and spacing tokens.
+   Components use Tailwind utilities that map to these values; this block
+   documents the system and provides vanilla-CSS fallbacks where needed.
+   ─────────────────────────────────────────────────────────────────── */
+:root {
+  /* Vertical rhythm — section padding */
+  --section-py:    96px;
+  --section-py-lg: 128px;
+
+  /* Typography scale */
+  --type-h1:   clamp(48px, 5.5vw, 72px);
+  --type-h2:   clamp(32px, 4vw,   48px);
+  --type-h3:   clamp(18px, 2vw,   24px);
+  --type-body: 16px;
+  --type-caption: 13px;
+
+  /* Line-height system */
+  --lh-display: 1.08;   /* hero H1 */
+  --lh-heading: 1.18;   /* H2, H3  */
+  --lh-body:    1.65;   /* paragraphs */
+  --lh-label:   1.4;    /* captions, tags */
+}
+
+/* Pill / tag baseline — applied wherever tags appear */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 4px 10px;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  line-height: var(--lh-label);
+  border-radius: 9999px;
+  border: 1px solid #e3e3e3;
+  background: #f7f7f7;
+  color: #515151;
+}
+
 /* Subtle border */
 .border-subtle {
   border: 1px solid rgba(200, 164, 93, 0.15);
@@ -78,4 +191,16 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(200, 164, 93, 0.12);
+}
+
+/* ── Slide-based deck ───────────────────────────────────────────────── */
+.deck-slide {
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
