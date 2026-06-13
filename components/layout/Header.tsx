@@ -21,7 +21,7 @@ const NAV_LINKS = [
  * so the navbar should start transparent with white text.
  * All other pages get the white/glass navbar immediately.
  */
-const DARK_HERO_PAGES = ['/', '/deck'];
+const DARK_HERO_PAGES = ['/deck'];
 
 export default function Header() {
   const pathname  = usePathname();
