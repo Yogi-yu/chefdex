@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: 'Team', href: '#team' },
   { label: 'Deck', href: '/deck' },
   { label: 'Demo', href: '/demo' },
+  { label: 'Video', href: '/video' },
 ];
 
 /**
