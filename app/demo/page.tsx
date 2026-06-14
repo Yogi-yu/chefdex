@@ -14,6 +14,10 @@ const SURF        = '#f8f9fa';
 const BORDER      = 'rgba(0,0,0,0.07)';
 const SHADOW      = '0 1px 3px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.06)';
 
+/* ── Auto-play timing ─────────────────────────────────────────── */
+const FLOW_DURATION = 10_000; // ms each flow stays on screen
+const IDLE_RESUME   = 15_000; // ms of idle before auto-play resumes
+
 /* ── Static data ──────────────────────────────────────────────── */
 const CHEFS = [
   { id: 1, initials: 'RR', name: 'René Redzepi',       restaurant: 'Noma',           mc: 4.21 },
@@ -39,16 +43,18 @@ const VIP_SLOTS = [
 ];
 
 /* ── State machine types ──────────────────────────────────────── */
-type Phase    = 'idle' | 'flow1' | 'flow2' | 'flow3' | 'complete';
+type Phase    = 'idle' | 'flow1' | 'flow2' | 'flow3';
 type RunPhase = 'flow1' | 'flow2' | 'flow3';
+
+const FLOW_ORDER: RunPhase[] = ['flow1', 'flow2', 'flow3'];
 
 /* ── Flow configuration ───────────────────────────────────────── */
 const FLOWS: Record<RunPhase, {
   index:     number;
   label:     string;
   title:     string;
+  tabLabel:  string;
   finalMsg:  string;
-  /** ms delay before auto-advancing to next step. 0 = pause for user. */
   delays:    number[];
   narrative: string[];
 }> = {
@@ -56,6 +62,7 @@ const FLOWS: Record<RunPhase, {
     index:    0,
     label:    '01',
     title:    'Global Chef Ranking',
+    tabLabel: '01  Global Chef Ranking',
     finalMsg: 'Global On-chain Chef Ranking System Active',
     delays:   [1200, 1900, 2100, 0],
     narrative: [
@@ -69,6 +76,7 @@ const FLOWS: Record<RunPhase, {
     index:    1,
     label:    '02',
     title:    'Membership & VIP Access',
+    tabLabel: '02  Membership & VIP',
     finalMsg: 'Token-gated dining access enabled',
     delays:   [1000, 1400, 1200, 1900, 0],
     narrative: [
@@ -83,6 +91,7 @@ const FLOWS: Record<RunPhase, {
     index:    2,
     label:    '03',
     title:    'Crypto Payment System',
+    tabLabel: '03  Crypto Payment System',
     finalMsg: 'On-chain settlement completed in 2.1s',
     delays:   [1000, 1600, 1200, 2300, 0],
     narrative: [
@@ -106,6 +115,12 @@ const slideUp = {
   hidden:  { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0,  transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const } },
   exit:    { opacity: 0, y: -10, transition: { duration: 0.28 } },
+};
+
+const flowSlide = {
+  hidden:  { opacity: 0, x: 40 },
+  visible: { opacity: 1, x: 0,  transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
+  exit:    { opacity: 0, x: -28, transition: { duration: 0.26 } },
 };
 
 /* ── Shared primitives ────────────────────────────────────────── */
@@ -133,34 +148,50 @@ function Spinner() {
   );
 }
 
-/* ── Progress indicator ───────────────────────────────────────── */
-function FlowProgress({ phase }: { phase: Phase }) {
-  const flows: RunPhase[] = ['flow1', 'flow2', 'flow3'];
-  const ci = phase === 'flow1' ? 0 : phase === 'flow2' ? 1 : phase === 'flow3' ? 2 : phase === 'complete' ? 3 : -1;
-
+/* ════════════════════════════════════════════════════════════
+   TAB BAR with auto-play progress bar
+   ════════════════════════════════════════════════════════════ */
+function DemoTabs({
+  phase,
+  isAutoPlaying,
+  onSelectTab,
+}: {
+  phase: RunPhase;
+  isAutoPlaying: boolean;
+  onSelectTab: (f: RunPhase) => void;
+}) {
   return (
-    <div className="flex items-center gap-2">
-      {flows.map((f, i) => (
-        <div key={f} className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-300"
+    <div className="flex gap-2 flex-wrap mb-10 md:mb-12">
+      {FLOW_ORDER.map((flow) => {
+        const active = phase === flow;
+        return (
+          <button
+            key={flow}
+            onClick={() => onSelectTab(flow)}
+            className="relative px-5 py-2.5 rounded-full text-xs md:text-sm font-bold transition-all duration-200 overflow-hidden select-none"
             style={{
-              background:  ci >= i ? GOLD : SURF,
-              color:       ci >= i ? '#111' : '#9ca3af',
-              border:      ci === i ? `2px solid ${GOLD}` : '2px solid transparent',
-              boxShadow:   ci === i ? `0 0 0 3px ${GOLD_TINT}` : 'none',
+              background:  active ? BLACK : SURF,
+              color:       active ? '#fff' : GRAY,
+              border:      active ? '1.5px solid transparent' : `1.5px solid ${BORDER}`,
+              boxShadow:   active ? '0 2px 8px rgba(0,0,0,0.10)' : 'none',
             }}
           >
-            {ci > i ? '✓' : i + 1}
-          </div>
-          {i < 2 && (
-            <div
-              className="h-px w-10 rounded-full transition-all duration-500"
-              style={{ background: ci > i ? GOLD : BORDER }}
-            />
-          )}
-        </div>
-      ))}
+            {FLOWS[flow].tabLabel}
+
+            {/* Auto-play progress bar — bottom of active tab */}
+            {active && isAutoPlaying && (
+              <motion.div
+                key={`${flow}-${isAutoPlaying}`}
+                className="absolute bottom-0 left-0 h-[2px] w-full origin-left"
+                style={{ background: GOLD }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: FLOW_DURATION / 1000, ease: 'linear' }}
+              />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -171,7 +202,6 @@ function FlowProgress({ phase }: { phase: Phase }) {
 function Flow1Panel({ step }: { step: number }) {
   const [chefs, setChefs] = useState(CHEFS);
 
-  /* Live market-cap ticker at final step */
   useEffect(() => {
     if (step < 3) return;
     const id = setInterval(() => {
@@ -186,7 +216,6 @@ function Flow1Panel({ step }: { step: number }) {
     <Card style={{ minHeight: 420 }}>
       <AnimatePresence mode="wait">
 
-        {/* Step 0 — connecting */}
         {step === 0 && (
           <motion.div key="s0" variants={slideUp} initial="hidden" animate="visible" exit="exit"
             className="h-[420px] flex flex-col items-center justify-center gap-4"
@@ -196,7 +225,6 @@ function Flow1Panel({ step }: { step: number }) {
           </motion.div>
         )}
 
-        {/* Step 1 — minting tokens */}
         {step === 1 && (
           <motion.div key="s1" variants={slideUp} initial="hidden" animate="visible" exit="exit"
             className="h-[420px] p-8 flex flex-col"
@@ -234,7 +262,6 @@ function Flow1Panel({ step }: { step: number }) {
           </motion.div>
         )}
 
-        {/* Steps 2-3 — leaderboard */}
         {step >= 2 && (
           <motion.div key="s2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col" style={{ minHeight: 420 }}>
             <div
@@ -310,7 +337,6 @@ function Flow2Panel({ step }: { step: number }) {
   return (
     <div className="flex flex-col gap-4" style={{ minHeight: 420 }}>
 
-      {/* Membership card with flip */}
       <div style={{ perspective: 900 }}>
         <motion.div
           animate={{ rotateY: step >= 1 ? 180 : 0 }}
@@ -365,7 +391,6 @@ function Flow2Panel({ step }: { step: number }) {
         </motion.div>
       </div>
 
-      {/* Calendar — appears at step 2 */}
       <AnimatePresence>
         {step >= 2 && (
           <motion.div key="cal" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -454,7 +479,6 @@ const PAY_TOKENS = [
 ];
 
 function QRCode({ scanning }: { scanning: boolean }) {
-  /* 9×9 binary matrix — approximates a QR corner-marker layout */
   const M = [
     [1,1,1,0,1,0,1,1,1],
     [1,0,1,0,0,0,1,0,1],
@@ -494,7 +518,6 @@ function Flow3Panel({ step }: { step: number }) {
     <Card style={{ minHeight: 420 }}>
       <AnimatePresence mode="wait">
 
-        {/* Step 0 — loading */}
         {step === 0 && (
           <motion.div key="s0" variants={slideUp} initial="hidden" animate="visible" exit="exit"
             className="h-[420px] flex flex-col items-center justify-center gap-4"
@@ -504,10 +527,8 @@ function Flow3Panel({ step }: { step: number }) {
           </motion.div>
         )}
 
-        {/* Steps 1+ — terminal */}
         {step >= 1 && (
           <motion.div key="terminal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col">
-            {/* Header */}
             <div className="px-5 py-3.5 border-b flex items-center justify-between"
               style={{ borderColor: BORDER, background: SURF }}>
               <div>
@@ -520,7 +541,6 @@ function Flow3Panel({ step }: { step: number }) {
               </div>
             </div>
 
-            {/* Bill */}
             <div className="px-5 pt-4 pb-3">
               <div className="text-[10px] font-bold tracking-widest uppercase text-neutral-400 mb-3">Bill Summary</div>
               <div className="flex flex-col gap-2 mb-3">
@@ -542,7 +562,6 @@ function Flow3Panel({ step }: { step: number }) {
               </div>
             </div>
 
-            {/* Token selector */}
             <div className="px-5 pb-3">
               <div className="text-[10px] font-bold tracking-widest uppercase text-neutral-400 mb-2">Pay with</div>
               <div className="flex gap-2">
@@ -564,7 +583,6 @@ function Flow3Panel({ step }: { step: number }) {
               </div>
             </div>
 
-            {/* QR / confirmed */}
             <div className="px-5 pb-5 flex flex-col items-center justify-center flex-1">
               <AnimatePresence mode="wait">
                 {step === 3 && (
@@ -616,7 +634,7 @@ function Flow3Panel({ step }: { step: number }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   IDLE SECTION
+   IDLE SECTION — minimal hero
    ════════════════════════════════════════════════════════════ */
 function IdleSection({ onStart }: { onStart: () => void }) {
   return (
@@ -626,65 +644,31 @@ function IdleSection({ onStart }: { onStart: () => void }) {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="min-h-screen flex flex-col items-center justify-center px-8 md:px-14 text-center"
+      className="min-h-screen flex flex-col items-center justify-center px-8 text-center"
       style={{ paddingTop: 120, paddingBottom: 80 }}
     >
-      {/* Subtle gold radial */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-64 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(200,164,93,0.08) 0%, transparent 65%)' }}
-      />
-
       <div className="relative max-w-3xl">
-        {/* Eyebrow */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex items-center justify-center gap-3 mb-10"
-        >
-          <div className="h-px w-8" style={{ background: GOLD }} />
-          <span className="text-xs font-bold tracking-[0.22em] uppercase" style={{ color: GOLD }}>
-            Interactive Product Demo · 2026
-          </span>
-          <div className="h-px w-8" style={{ background: GOLD }} />
-        </motion.div>
-
-        {/* Headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 }}
-          className="font-black leading-[1.0] tracking-tight mb-6"
-          style={{ fontSize: 'clamp(52px, 8vw, 96px)', color: BLACK, letterSpacing: '-0.035em' }}
+          transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="font-black leading-[1.0] tracking-tight mb-12"
+          style={{ fontSize: 'clamp(56px, 9vw, 104px)', color: BLACK, letterSpacing: '-0.04em' }}
         >
-          Experience<br />
-          <span style={{ color: GOLD }}>ChefDex.</span>
+          ChefDex<br />
+          <span style={{ color: GOLD }}>Demo</span>
         </motion.h1>
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.26 }}
-          className="text-lg md:text-xl leading-relaxed mb-12 max-w-xl mx-auto"
-          style={{ color: GRAY }}
-        >
-          Three product modules. One on-chain protocol. Click start to see how ChefDex connects chef reputation, token-gated dining, and real-world crypto payments.
-        </motion.p>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.34 }}
-          className="flex flex-col items-center gap-8"
+          transition={{ delay: 0.22, duration: 0.4 }}
         >
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onStart}
-            className="flex items-center gap-3 px-10 py-5 rounded-full font-bold text-base"
+            className="inline-flex items-center gap-3 px-10 py-5 rounded-full font-bold text-base"
             style={{
               background: GOLD,
               color: '#111',
@@ -694,24 +678,6 @@ function IdleSection({ onStart }: { onStart: () => void }) {
             <span className="text-lg leading-none">▶</span>
             Start Demo
           </motion.button>
-
-          {/* Module labels */}
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {[
-              { num: '01', title: 'Global Chef Ranking'  },
-              { num: '02', title: 'Membership & VIP'     },
-              { num: '03', title: 'Crypto Payment System'},
-            ].map(m => (
-              <div
-                key={m.num}
-                className="flex items-center gap-2 px-4 py-2 rounded-full border"
-                style={{ borderColor: BORDER, background: SURF }}
-              >
-                <span className="text-[10px] font-black" style={{ color: GOLD }}>{m.num}</span>
-                <span className="text-xs font-semibold text-neutral-500">{m.title}</span>
-              </div>
-            ))}
-          </div>
         </motion.div>
       </div>
     </motion.section>
@@ -719,16 +685,22 @@ function IdleSection({ onStart }: { onStart: () => void }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   DEMO RUNNER
+   DEMO RUNNER — tabs + auto-play carousel
    ════════════════════════════════════════════════════════════ */
 function DemoRunner({
-  phase, step, onContinue,
+  phase,
+  step,
+  isAutoPlaying,
+  onSelectTab,
+  onRestart,
 }: {
-  phase: RunPhase; step: number; onContinue: () => void;
+  phase: RunPhase;
+  step: number;
+  isAutoPlaying: boolean;
+  onSelectTab: (f: RunPhase) => void;
+  onRestart: () => void;
 }) {
-  const meta     = FLOWS[phase];
-  const isFinal  = meta.delays[step] === 0;
-  const isLast   = phase === 'flow3';
+  const meta = FLOWS[phase];
 
   return (
     <motion.div
@@ -742,273 +714,169 @@ function DemoRunner({
     >
       <div className="max-w-7xl mx-auto">
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-12">
-          <FlowProgress phase={phase} />
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-xs font-black tracking-[0.2em] uppercase" style={{ color: GOLD }}>{meta.label}</span>
-            <div className="h-px w-6" style={{ background: GOLD_BORDER }} />
-            <span className="text-xs font-semibold text-neutral-400">{meta.title}</span>
-          </div>
-        </div>
+        {/* Tab bar */}
+        <DemoTabs phase={phase} isAutoPlaying={isAutoPlaying} onSelectTab={onSelectTab} />
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+        {/* Flow content — transitions on phase change */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={phase}
+            variants={flowSlide}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
 
-          {/* ── Left: narrative ── */}
-          <div>
-            <div className="text-xs font-black tracking-[0.25em] uppercase mb-4" style={{ color: GOLD }}>
-              {meta.label}
-            </div>
-            <h2
-              className="font-black leading-[1.08] tracking-tight mb-8"
-              style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: BLACK, letterSpacing: '-0.02em' }}
-            >
-              {meta.title}
-            </h2>
-
-            {/* Step narrative — fades between steps */}
-            <div className="mb-8" style={{ minHeight: 60 }}>
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`${phase}-${step}`}
-                  variants={slideUp}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="text-lg leading-relaxed"
-                  style={{ color: GRAY }}
+              {/* Left: narrative */}
+              <div>
+                <div className="text-xs font-black tracking-[0.25em] uppercase mb-4" style={{ color: GOLD }}>
+                  {meta.label}
+                </div>
+                <h2
+                  className="font-black leading-[1.08] tracking-tight mb-8"
+                  style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: BLACK, letterSpacing: '-0.02em' }}
                 >
-                  {meta.narrative[step]}
-                </motion.p>
-              </AnimatePresence>
-            </div>
+                  {meta.title}
+                </h2>
 
-            {/* Step progress dots */}
-            <div className="flex gap-2 mb-10">
-              {meta.delays.map((_, i) => (
-                <div
-                  key={i}
-                  className="h-1 rounded-full transition-all duration-500"
-                  style={{
-                    width:      i <= step ? 24 : 8,
-                    background: i <= step ? GOLD : 'rgba(0,0,0,0.12)',
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Final step: confirmation badge + continue button */}
-            <AnimatePresence>
-              {isFinal && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                >
-                  <div
-                    className="flex items-center gap-3 rounded-xl px-5 py-4 border mb-6"
-                    style={{ background: GOLD_TINT, borderColor: GOLD_BORDER }}
-                  >
-                    <div
-                      className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
-                      style={{ background: GOLD, color: '#111' }}
+                {/* Narrative — fades between steps */}
+                <div className="mb-8" style={{ minHeight: 60 }}>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={`${phase}-${step}`}
+                      variants={slideUp}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="text-lg leading-relaxed"
+                      style={{ color: GRAY }}
                     >
-                      ✓
-                    </div>
-                    <span className="text-sm font-semibold" style={{ color: BLACK }}>{meta.finalMsg}</span>
-                  </div>
+                      {meta.narrative[step]}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={onContinue}
-                    className="flex items-center gap-2.5 px-8 py-4 rounded-full font-bold text-sm"
-                    style={{
-                      background: GOLD,
-                      color: '#111',
-                      boxShadow: `0 4px 20px rgba(200,164,93,0.30)`,
-                    }}
-                  >
-                    {isLast ? 'See Summary' : 'Next Module'}
-                    <span>→</span>
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                {/* Step progress dots */}
+                <div className="flex gap-2 mb-10">
+                  {meta.delays.map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-1 rounded-full transition-all duration-500"
+                      style={{
+                        width:      i <= step ? 24 : 8,
+                        background: i <= step ? GOLD : 'rgba(0,0,0,0.12)',
+                      }}
+                    />
+                  ))}
+                </div>
 
-          {/* ── Right: animated panel (persists between steps, content updates internally) ── */}
-          <div>
-            {phase === 'flow1' && <Flow1Panel step={step} />}
-            {phase === 'flow2' && <Flow2Panel step={step} />}
-            {phase === 'flow3' && <Flow3Panel step={step} />}
-          </div>
-        </div>
+                {/* Final state badge */}
+                <AnimatePresence>
+                  {meta.delays[step] === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="flex items-center gap-3 rounded-xl px-5 py-4 border"
+                      style={{ background: GOLD_TINT, borderColor: GOLD_BORDER }}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style={{ background: GOLD, color: '#111' }}
+                      >
+                        ✓
+                      </div>
+                      <span className="text-sm font-semibold" style={{ color: BLACK }}>{meta.finalMsg}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Right: animated panel */}
+              <div>
+                {phase === 'flow1' && <Flow1Panel step={step} />}
+                {phase === 'flow2' && <Flow2Panel step={step} />}
+                {phase === 'flow3' && <Flow3Panel step={step} />}
+              </div>
+            </div>
+
+            {/* Restart */}
+            <div className="mt-14 text-center">
+              <button
+                onClick={onRestart}
+                className="text-xs underline text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                Restart demo
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
       </div>
     </motion.div>
   );
 }
 
 /* ════════════════════════════════════════════════════════════
-   COMPLETE SECTION
-   ════════════════════════════════════════════════════════════ */
-function CompleteSection({ onRestart }: { onRestart: () => void }) {
-  const RESULTS = [
-    { label: 'Global On-chain Chef Ranking System Active', sub: 'ChefCoin Launchpad · Live rankings updated every block' },
-    { label: 'Token-gated dining access enabled',          sub: 'VIP Membership · Kitchening P0 priority system' },
-    { label: 'On-chain settlement completed in 2.1s',      sub: 'Crypto Payment · QR · Face ID · Palm Pay' },
-  ];
-
-  return (
-    <motion.section
-      key="complete"
-      variants={pageFade}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      className="min-h-screen flex flex-col items-center justify-center px-8 md:px-14 text-center"
-      style={{ paddingTop: 112, paddingBottom: 80 }}
-    >
-      <div className="max-w-2xl w-full">
-        {/* Check mark */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-          className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mx-auto mb-8"
-          style={{ background: GOLD, color: '#111', boxShadow: `0 8px 32px rgba(200,164,93,0.30)` }}
-        >
-          ✓
-        </motion.div>
-
-        <motion.h2
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="font-black tracking-tight mb-4"
-          style={{ fontSize: 'clamp(36px, 5vw, 56px)', color: BLACK, letterSpacing: '-0.025em' }}
-        >
-          Demo Complete.
-        </motion.h2>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.22 }}
-          className="text-lg leading-relaxed mb-10"
-          style={{ color: GRAY }}
-        >
-          You just experienced all three ChefDex modules — the full on-chain ecosystem for professional chefs and fine dining.
-        </motion.p>
-
-        {/* Result cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-col gap-3 mb-10 text-left"
-        >
-          {RESULTS.map((r, i) => (
-            <motion.div
-              key={r.label}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35 + i * 0.1 }}
-              className="flex items-start gap-4 rounded-xl px-5 py-4 border"
-              style={{ background: GOLD_TINT, borderColor: GOLD_BORDER }}
-            >
-              <div
-                className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5"
-                style={{ background: GOLD, color: '#111' }}
-              >
-                ✓
-              </div>
-              <div>
-                <div className="text-sm font-semibold mb-0.5" style={{ color: BLACK }}>{r.label}</div>
-                <div className="text-xs" style={{ color: GRAY }}>{r.sub}</div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
-        >
-          <a
-            href="mailto:hello@chefdex.io"
-            className="px-8 py-4 rounded-full font-bold text-sm transition-all hover:opacity-88"
-            style={{ background: GOLD, color: '#111', boxShadow: `0 4px 20px rgba(200,164,93,0.28)` }}
-          >
-            Contact Us → hello@chefdex.io
-          </a>
-          <a
-            href="/deck"
-            className="px-8 py-4 rounded-full font-bold text-sm border transition-all hover:bg-neutral-50"
-            style={{ borderColor: BORDER, color: GRAY }}
-          >
-            View Investor Deck
-          </a>
-        </motion.div>
-
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          onClick={onRestart}
-          className="mt-6 text-xs underline text-neutral-400 hover:text-neutral-600 transition-colors"
-        >
-          Restart demo
-        </motion.button>
-      </div>
-    </motion.section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   PAGE — state machine controller
+   PAGE — state machine + auto-play controller
    ════════════════════════════════════════════════════════════ */
 export default function DemoPage() {
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [step,  setStep]  = useState(0);
+  const [phase, setPhase]               = useState<Phase>('flow1');
+  const [step,  setStep]                = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState(0);
 
-  /* Auto-advance through steps with configured delays */
+  /* Auto-advance steps within the active flow */
   useEffect(() => {
-    if (phase === 'idle' || phase === 'complete') return;
     const delays = FLOWS[phase as RunPhase].delays;
     const delay  = delays[step];
-    if (!delay) return; // 0 = pause, wait for user to click Continue
+    if (!delay) return; // final step — wait for auto-play timer
     const t = setTimeout(() => setStep(s => s + 1), delay);
     return () => clearTimeout(t);
   }, [phase, step]);
 
-  const startDemo = () => { setPhase('flow1'); setStep(0); };
+  /* Auto-play: cycle to next flow every FLOW_DURATION ms */
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    const t = setTimeout(() => {
+      const idx  = FLOW_ORDER.indexOf(phase as RunPhase);
+      const next = FLOW_ORDER[(idx + 1) % FLOW_ORDER.length];
+      setPhase(next);
+      setStep(0);
+    }, FLOW_DURATION);
+    return () => clearTimeout(t);
+  }, [phase, isAutoPlaying]);
 
-  const continueDemo = () => {
-    if (phase === 'flow1') { setPhase('flow2'); setStep(0); }
-    else if (phase === 'flow2') { setPhase('flow3'); setStep(0); }
-    else if (phase === 'flow3') { setPhase('complete'); setStep(0); }
+  /* Resume auto-play IDLE_RESUME ms after the last manual interaction */
+  useEffect(() => {
+    if (isAutoPlaying || lastInteraction === 0) return;
+    const t = setTimeout(() => setIsAutoPlaying(true), IDLE_RESUME);
+    return () => clearTimeout(t);
+  }, [lastInteraction, isAutoPlaying]);
+
+  const selectTab = (flow: RunPhase) => {
+    setPhase(flow);
+    setStep(0);
+    setIsAutoPlaying(false);
+    setLastInteraction(Date.now());
   };
 
-  const restartDemo = () => { setPhase('idle'); setStep(0); };
+  const restartDemo = () => {
+    setPhase('idle');
+    setStep(0);
+    setIsAutoPlaying(true);
+  };
 
   return (
     <main className="bg-white overflow-hidden">
-      <AnimatePresence mode="wait">
-        {phase === 'idle' && (
-          <IdleSection key="idle" onStart={startDemo} />
-        )}
-        {(phase === 'flow1' || phase === 'flow2' || phase === 'flow3') && (
-          <DemoRunner key="runner" phase={phase as RunPhase} step={step} onContinue={continueDemo} />
-        )}
-        {phase === 'complete' && (
-          <CompleteSection key="complete" onRestart={restartDemo} />
-        )}
-      </AnimatePresence>
+      <DemoRunner
+        phase={phase as RunPhase}
+        step={step}
+        isAutoPlaying={isAutoPlaying}
+        onSelectTab={selectTab}
+        onRestart={restartDemo}
+      />
     </main>
   );
 }
