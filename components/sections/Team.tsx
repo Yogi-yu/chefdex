@@ -29,6 +29,7 @@ const TEAM = [
   {
     name: 'Tina Liu',
     initials: 'TL',
+    image: '/pics/tina.png',
     title: 'Head of Operations',
     background:
       'Private equity investing background. Tina leads operations, execution, and strategic partnerships — bringing institutional-grade discipline to how ChefDex scales and deploys capital.',

@@ -101,7 +101,7 @@ const TEAM = [
     tags: ['Fine Dining', 'Culinary Operations', 'Chef Network'], avatarVariant: 'dark' as const,
   },
   {
-    name: 'Tina Liu', initials: 'TL', title: 'Head of Operations',
+    name: 'Tina Liu', initials: 'TL', image: '/pics/tina.png', title: 'Head of Operations',
     background: 'Private equity investing background. Tina leads operations, execution, and strategic partnerships — bringing institutional-grade discipline to how ChefDex scales and deploys capital.',
     tags: ['Private Equity', 'Operations', 'Partnerships'], avatarVariant: 'gold' as const,
   },

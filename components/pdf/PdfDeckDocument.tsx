@@ -316,7 +316,7 @@ const COMPARISON = [
 const TEAM = [
   { initials: 'CZ', image: '/pics/clinton.jpg', name: 'Clinton Zhu', title: 'Founder',           avatarBg: GOLD, tags: ['Chef', 'Protocol Design', 'Crypto Products'],     desc: 'Senior chef and crypto product builder. Clinton brings a rare combination of professional kitchen expertise and on-chain protocol experience.' },
   { initials: 'AL', image: '/pics/alex.jpg',    name: 'Alex Li',     title: 'Chef Partner',       avatarBg: DARK, tags: ['Fine Dining', 'Culinary Operations', 'Chef Network'], desc: 'Experienced professional chef mentored by Clinton Zhu. Alex drives culinary credibility and chef-side adoption.' },
-  { initials: 'TL',                             name: 'Tina Liu',    title: 'Head of Operations', avatarBg: GOLD, tags: ['Private Equity', 'Operations', 'Partnerships'],     desc: 'Private equity investing background. Tina leads operations, execution, and strategic partnerships with institutional-grade discipline.' },
+  { initials: 'TL', image: '/pics/tina.png',    name: 'Tina Liu',    title: 'Head of Operations', avatarBg: GOLD, tags: ['Private Equity', 'Operations', 'Partnerships'],     desc: 'Private equity investing background. Tina leads operations, execution, and strategic partnerships with institutional-grade discipline.' },
 ];
 
 const ROADMAP = [
