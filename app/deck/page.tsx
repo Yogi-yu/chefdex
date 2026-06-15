@@ -91,12 +91,12 @@ const COMPARISON = [
 
 const TEAM = [
   {
-    name: 'Clinton Zhu', initials: 'CZ', title: 'Founder',
+    name: 'Clinton Zhu', initials: 'CZ', image: '/pics/clinton.jpg', title: 'Founder',
     background: 'Senior chef and crypto product builder. Clinton brings a rare combination of professional kitchen expertise and on-chain protocol experience — the founding conviction behind ChefDex.',
     tags: ['Chef', 'Protocol Design', 'Crypto Products'], avatarVariant: 'gold' as const,
   },
   {
-    name: 'Alex Li', initials: 'AL', title: 'Chef Partner',
+    name: 'Alex Li', initials: 'AL', image: '/pics/alex.jpg', title: 'Chef Partner',
     background: 'Experienced professional chef mentored by Clinton Zhu. Alex drives culinary credibility and chef-side adoption, ensuring ChefDex is built to the standards of serious kitchen professionals.',
     tags: ['Fine Dining', 'Culinary Operations', 'Chef Network'], avatarVariant: 'dark' as const,
   },
@@ -131,6 +131,17 @@ function MonogramAvatar({ initials, variant }: { initials: string; variant: 'gol
       <div className={`absolute inset-[-4px] rounded-[18px] blur-[8px] pointer-events-none ${isGold ? 'bg-gold-400/30' : 'bg-charcoal-600/35'}`} />
       <div className={`relative w-full h-full rounded-[14px] flex items-center justify-center shadow-md ring-2 ${isGold ? 'bg-gradient-to-br from-gold-300 via-gold-500 to-gold-700 ring-gold-400/25' : 'bg-gradient-to-br from-charcoal-600 via-charcoal-800 to-charcoal-950 ring-charcoal-500/30'}`}>
         <span className="text-white font-black text-base tracking-tight leading-none select-none">{initials}</span>
+      </div>
+    </div>
+  );
+}
+
+function PhotoAvatar({ src, name }: { src: string; name: string }) {
+  return (
+    <div className="relative w-14 h-14 mb-4 flex-shrink-0">
+      <div className="absolute inset-[-4px] rounded-[18px] blur-[8px] pointer-events-none bg-gold-400/20" />
+      <div className="relative w-full h-full rounded-[14px] overflow-hidden shadow-md ring-2 ring-gold-400/25">
+        <Image src={src} alt={name} fill className="object-cover" sizes="56px" />
       </div>
     </div>
   );
@@ -507,7 +518,10 @@ export default function DeckPage() {
               <motion.div key={member.name} className="group relative bg-white rounded-2xl border border-charcoal-100 p-6 hover:border-gold-200 hover:shadow-md transition-all duration-300 overflow-hidden" {...fade(i * 0.1)}>
                 <div className="absolute inset-0 bg-gradient-to-br from-gold-50/0 to-gold-50/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
                 <div className="relative">
-                  <MonogramAvatar initials={member.initials} variant={member.avatarVariant} />
+                  {'image' in member && member.image
+                    ? <PhotoAvatar src={member.image} name={member.name} />
+                    : <MonogramAvatar initials={member.initials} variant={member.avatarVariant} />
+                  }
                   <h3 className="text-sm font-bold text-charcoal-950">{member.name}</h3>
                   <div className="text-xs font-semibold text-gold-600 mt-0.5 mb-2">{member.title}</div>
                   <p className="text-xs text-charcoal-500 leading-relaxed mb-3">{member.background}</p>

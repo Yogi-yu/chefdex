@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import SectionLabel from '@/components/ui/SectionLabel';
 
@@ -8,6 +9,7 @@ const TEAM = [
   {
     name: 'Clinton Zhu',
     initials: 'CZ',
+    image: '/pics/clinton.jpg',
     title: 'Founder',
     background:
       'Senior chef and crypto product builder. Clinton brings a rare combination of professional kitchen expertise and on-chain protocol experience — the founding conviction behind ChefDex.',
@@ -17,6 +19,7 @@ const TEAM = [
   {
     name: 'Alex Li',
     initials: 'AL',
+    image: '/pics/alex.jpg',
     title: 'Chef Partner',
     background:
       'Experienced professional chef mentored by Clinton Zhu. Alex drives culinary credibility and chef-side adoption, ensuring ChefDex is built to the standards of serious kitchen professionals.',
@@ -39,13 +42,11 @@ function MonogramAvatar({ initials, variant }: { initials: string; variant: 'gol
   const isGold = variant === 'gold';
   return (
     <div className="relative w-[72px] h-[72px] mb-6 flex-shrink-0">
-      {/* Soft glow halo behind the tile */}
       <div
         className={`absolute inset-[-6px] rounded-[22px] blur-[12px] pointer-events-none ${
           isGold ? 'bg-gold-400/30' : 'bg-charcoal-600/35'
         }`}
       />
-      {/* Avatar tile */}
       <div
         className={`relative w-full h-full rounded-[18px] flex items-center justify-center shadow-lg ring-2 ${
           isGold
@@ -56,6 +57,23 @@ function MonogramAvatar({ initials, variant }: { initials: string; variant: 'gol
         <span className="text-white font-black text-xl tracking-tight leading-none select-none">
           {initials}
         </span>
+      </div>
+    </div>
+  );
+}
+
+function PhotoAvatar({ src, name }: { src: string; name: string }) {
+  return (
+    <div className="relative w-[72px] h-[72px] mb-6 flex-shrink-0">
+      <div className="absolute inset-[-6px] rounded-[22px] blur-[12px] pointer-events-none bg-gold-400/20" />
+      <div className="relative w-full h-full rounded-[18px] overflow-hidden shadow-lg ring-2 ring-gold-400/25">
+        <Image
+          src={src}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="72px"
+        />
       </div>
     </div>
   );
@@ -117,7 +135,10 @@ export default function Team() {
               <div className="absolute inset-0 bg-gradient-to-br from-gold-50/0 to-gold-50/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
 
               <div className="relative">
-                <MonogramAvatar initials={member.initials} variant={member.avatarVariant} />
+                {'image' in member && member.image
+                  ? <PhotoAvatar src={member.image} name={member.name} />
+                  : <MonogramAvatar initials={member.initials} variant={member.avatarVariant} />
+                }
 
                 <h3 className="text-lg font-bold text-charcoal-950 leading-snug">{member.name}</h3>
                 <div className="text-sm font-semibold text-gold-600 mt-0.5 mb-3">{member.title}</div>

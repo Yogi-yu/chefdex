@@ -314,9 +314,9 @@ const COMPARISON = [
 ];
 
 const TEAM = [
-  { initials: 'CZ', name: 'Clinton Zhu', title: 'Founder',           avatarBg: GOLD, tags: ['Chef', 'Protocol Design', 'Crypto Products'],     desc: 'Senior chef and crypto product builder. Clinton brings a rare combination of professional kitchen expertise and on-chain protocol experience.' },
-  { initials: 'AL', name: 'Alex Li',     title: 'Chef Partner',       avatarBg: DARK, tags: ['Fine Dining', 'Culinary Operations', 'Chef Network'], desc: 'Experienced professional chef mentored by Clinton Zhu. Alex drives culinary credibility and chef-side adoption.' },
-  { initials: 'TL', name: 'Tina Liu',    title: 'Head of Operations', avatarBg: GOLD, tags: ['Private Equity', 'Operations', 'Partnerships'],     desc: 'Private equity investing background. Tina leads operations, execution, and strategic partnerships with institutional-grade discipline.' },
+  { initials: 'CZ', image: '/pics/clinton.jpg', name: 'Clinton Zhu', title: 'Founder',           avatarBg: GOLD, tags: ['Chef', 'Protocol Design', 'Crypto Products'],     desc: 'Senior chef and crypto product builder. Clinton brings a rare combination of professional kitchen expertise and on-chain protocol experience.' },
+  { initials: 'AL', image: '/pics/alex.jpg',    name: 'Alex Li',     title: 'Chef Partner',       avatarBg: DARK, tags: ['Fine Dining', 'Culinary Operations', 'Chef Network'], desc: 'Experienced professional chef mentored by Clinton Zhu. Alex drives culinary credibility and chef-side adoption.' },
+  { initials: 'TL',                             name: 'Tina Liu',    title: 'Head of Operations', avatarBg: GOLD, tags: ['Private Equity', 'Operations', 'Partnerships'],     desc: 'Private equity investing background. Tina leads operations, execution, and strategic partnerships with institutional-grade discipline.' },
 ];
 
 const ROADMAP = [
@@ -741,13 +741,22 @@ function Slide10() {
             border: `1px solid ${BORDER}`, borderRadius: 14,
             padding: 28, boxSizing: 'border-box',
           }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 14,
-              background: member.avatarBg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: 16, color: WHITE, fontSize: 20, fontWeight: 900,
-              letterSpacing: '-0.02em', lineHeight: 1,
-            }}>{member.initials}</div>
+            {'image' in member && member.image
+              ? (
+                <div style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 16, overflow: 'hidden' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={member.image} alt={member.name} width={56} height={56} style={{ width: 56, height: 56, objectFit: 'cover', display: 'block' }} />
+                </div>
+              ) : (
+                <div style={{
+                  width: 56, height: 56, borderRadius: 14,
+                  background: member.avatarBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 16, color: WHITE, fontSize: 20, fontWeight: 900,
+                  letterSpacing: '-0.02em', lineHeight: 1,
+                }}>{member.initials}</div>
+              )
+            }
             <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, lineHeight: 1.25, wordBreak: 'break-word' }}>{member.name}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: GOLD, marginBottom: 12, lineHeight: 1.3 }}>{member.title}</div>
             <p style={{ ...body(), fontSize: 14, marginBottom: 16, lineHeight: 1.6 }}>{member.desc}</p>
